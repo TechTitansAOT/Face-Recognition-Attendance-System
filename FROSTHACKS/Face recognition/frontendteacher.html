@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance System</title>
+    <style>
+
+        *{
+            margin: 0px;
+            padding: 0px;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460, #533483);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center
+        }
+        .container{
+            height: full;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .box{
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+
+        }
+        h1{
+            color: #f8f8f8;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); 
+        }
+        .smalls{
+            font-size: 1.3em;
+            font-weight: 20;
+            margin: 15px 0;
+            color: #e0e0e0;
+
+
+        }
+        .inputdata{
+            width: 92%;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button1{
+            background: #8d19d1;
+            color: white;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: none;
+            padding: auto;
+
+        }
+        .button1:hover{
+            background: #651fff;
+            transform: translateY(-2px);
+            transition: all ease 0.3s;
+        }
+
+        .button2{
+            border-radius: 8px;
+            border: none;
+            background: #00c853;
+            color: white;
+            font-weight: bold;
+            margin-top: 5;
+        }
+        .button2.hover{
+            background: #009624;
+            transform: translateY(-2px);
+
+        }
+        .button2:disabled {
+            background: #4a4a4a;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+
+        input, select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        select {
+            color: black;
+        }
+        option {
+            color: #1a1a2e;
+        }
+
+        hr {
+            margin: 20px 0;
+        }
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        #status {
+            font-size: 18px;
+            margin-top: 20px;
+            color: red;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="box">
+            <h1>Teacher Operating Panel</h1>
+    
+
+            <h2 class="smalls">Add New Subject</h2>
+            <input class="inputdata" type="text" id="newSubjectInput" placeholder="Enter New Subject Name">
+            <br>
+            <button class="button1" id="addSubjectBtn">Add Subject</button>
+            <p id="addSubjectStatus"></p>
+
+            <h2 class="smalls">Select Subject</h2>
+            <select class="inputdata" id="subjectSelect" style="width: 97%;">
+                <option value="" style="background-color: #4a4a4a; color: black;" disabled selected>Select a subject</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+            <br>
+            <button class="button2" id="startBtn" disabled>Start Attendance</button>
+            <div class="" style="text-align: center; columns: #ffffff;"><p id="status">Status: Waiting to start...</p></div>
+            
+        </div>
+
+    </div>
+    
+
+
+
+    
+
+
+    <script>
+        // Fetch subjects from the server and populate the dropdown
+        function fetchSubjects() {
+            fetch("http://127.0.0.1:5000/get-subjects")
+                .then(response => response.json())
+                .then(data => {
+                    const subjectSelect = document.getElementById("subjectSelect");
+                    subjectSelect.innerHTML = '<option value="" disabled selected>Select a subject</option>';
+                    data.subjects.forEach(subject => {
+                        const option = document.createElement("option");
+                        option.value = subject;
+                        option.textContent = subject;
+                        subjectSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error fetching subjects:", error);
+                });
+        }
+
+        // Initialize by fetching subjects
+        fetchSubjects();
+
+        // Enable the "Start Attendance" button when a subject is selected
+        document.getElementById("subjectSelect").addEventListener("change", function () {
+            document.getElementById("startBtn").disabled = !this.value;
+        });
+
+        // Handle starting the attendance process
+        document.getElementById("startBtn").addEventListener("click", function () {
+            const selectedSubject = document.getElementById("subjectSelect").value;
+            if (!selectedSubject) {
+                document.getElementById("status").innerText = "Please select a subject.";
+                document.getElementById("status").style.color = "red";
+                return;
+            }
+
+            document.getElementById("status").innerText = "Starting attendance for " + selectedSubject + "...";
+            document.getElementById("status").style.color = "blue";
+
+            // Send request to start the backend with the selected subject
+            fetch("http://127.0.0.1:5000/start-backend", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ subject: selectedSubject })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        document.getElementById("status").innerText = "Attendance started for " + selectedSubject + ".";
+                        document.getElementById("status").style.color = "green";
+                    } else {
+                        document.getElementById("status").innerText = "Error: " + data.message;
+                        document.getElementById("status").style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    document.getElementById("status").innerText = "Error starting attendance.";
+                    document.getElementById("status").style.color = "red";
+                });
+        });
+
+        // Handle adding a new subject
+        document.getElementById("addSubjectBtn").addEventListener("click", function () {
+            const newSubject = document.getElementById("newSubjectInput").value.trim();
+
+            if (newSubject === "") {
+                document.getElementById("addSubjectStatus").innerText = "Please enter a subject name.";
+                document.getElementById("addSubjectStatus").style.color = "red";
+                return;
+            }
+
+            document.getElementById("addSubjectStatus").innerText = "Adding subject... Please wait.";
+            document.getElementById("addSubjectStatus").style.color = "blue";
+
+            // Send the new subject name to the backend to add to Google Sheets
+            fetch("http://127.0.0.1:5000/add-subject", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ subject: newSubject })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        document.getElementById("addSubjectStatus").innerText = "Subject added successfully!";
+                        document.getElementById("addSubjectStatus").style.color = "green";
+                        document.getElementById("newSubjectInput").value = "";
+                        fetchSubjects(); // Refresh the subject list
+                    } else {
+                        document.getElementById("addSubjectStatus").innerText = "Error: " + data.message;
+                        document.getElementById("addSubjectStatus").style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    document.getElementById("addSubjectStatus").innerText = "Error adding subject.";
+                    document.getElementById("addSubjectStatus").style.color = "red";
+                });
+        });
+    </script>
+
+</body>
+</html>
